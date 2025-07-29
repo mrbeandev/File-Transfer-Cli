@@ -9,11 +9,21 @@ import subprocess
 import shutil
 from pathlib import Path
 
+# Detect if we're running in a CI environment (like GitHub Actions)
+CI_ENV = os.environ.get('CI', 'false').lower() == 'true'
+
+# Use ASCII alternatives for emojis in CI environments
+def safe_emoji(emoji, alt_text):
+    """Return the emoji if not in CI, otherwise return an ASCII alternative"""
+    if CI_ENV:
+        return alt_text
+    return emoji
+
 
 def build_executable():
     """Build the executable using PyInstaller"""
 
-    print("🔨 Building File Transfer CLI executable...")
+    print(f"{safe_emoji('🔨', '[BUILD]')} Building File Transfer CLI executable...")
 
     # Clean previous builds
     if os.path.exists("build"):
@@ -50,29 +60,29 @@ def build_executable():
     try:
         # Run PyInstaller
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("✅ Build completed successfully!")
+        print(f"{safe_emoji('✅', '[SUCCESS]')} Build completed successfully!")
 
         # Check if executable was created
         exe_path = "dist/FileTransferCLI.exe"
         if os.path.exists(exe_path):
             file_size = os.path.getsize(exe_path) / (1024 * 1024)  # MB
-            print(f"📦 Executable created: {exe_path}")
-            print(f"📏 File size: {file_size:.1f} MB")
+            print(f"{safe_emoji('📦', '[INFO]')} Executable created: {exe_path}")
+            print(f"{safe_emoji('📏', '[INFO]')} File size: {file_size:.1f} MB")
 
             # Copy to root directory for easy access
             shutil.copy2(exe_path, "FileTransferCLI.exe")
-            print("📋 Copied executable to root directory: FileTransferCLI.exe")
+            print(f"{safe_emoji('📋', '[INFO]')} Copied executable to root directory: FileTransferCLI.exe")
 
         else:
-            print("❌ Executable not found in dist directory")
+            print(f"{safe_emoji('❌', '[ERROR]')} Executable not found in dist directory")
             return False
 
     except subprocess.CalledProcessError as e:
-        print(f"❌ Build failed with error: {e}")
+        print(f"{safe_emoji('❌', '[ERROR]')} Build failed with error: {e}")
         print(f"Error output: {e.stderr}")
         return False
     except Exception as e:
-        print(f"❌ Unexpected error during build: {e}")
+        print(f"{safe_emoji('❌', '[ERROR]')} Unexpected error during build: {e}")
         return False
 
     return True
@@ -80,7 +90,7 @@ def build_executable():
 
 def install_dependencies():
     """Install required dependencies"""
-    print("📦 Installing dependencies...")
+    print(f"{safe_emoji('📦', '[INSTALL]')} Installing dependencies...")
 
     try:
         subprocess.run(
@@ -89,22 +99,22 @@ def install_dependencies():
             capture_output=True,
             text=True,
         )
-        print("✅ Dependencies installed successfully!")
+        print(f"{safe_emoji('✅', '[SUCCESS]')} Dependencies installed successfully!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to install dependencies: {e}")
+        print(f"{safe_emoji('❌', '[ERROR]')} Failed to install dependencies: {e}")
         print(f"Error output: {e.stderr}")
         return False
 
 
 def main():
     """Main build process"""
-    print("🚀 Starting build process for File Transfer CLI")
+    print(f"{safe_emoji('🚀', '[START]')} Starting build process for File Transfer CLI")
     print("=" * 60)
 
     # Check if main file exists
     if not os.path.exists("main.py"):
-        print("❌ main.py not found!")
+        print(f"{safe_emoji('❌', '[ERROR]')} main.py not found!")
         return False
 
     # Install dependencies
@@ -115,9 +125,9 @@ def main():
     if not build_executable():
         return False
 
-    print("\n🎉 Build process completed successfully!")
-    print("📁 Your executable is ready: FileTransferCLI.exe")
-    print("\n💡 Usage:")
+    print(f"\n{safe_emoji('🎉', '[COMPLETE]')} Build process completed successfully!")
+    print(f"{safe_emoji('📁', '[INFO]')} Your executable is ready: FileTransferCLI.exe")
+    print(f"\n{safe_emoji('💡', '[TIP]')} Usage:")
     print("   - Double-click FileTransferCLI.exe to run")
     print("   - No Python installation required on target machine")
     print("   - All dependencies are bundled in the executable")
