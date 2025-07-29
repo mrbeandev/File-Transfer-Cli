@@ -52,6 +52,15 @@ def build_executable():
     # Remove icon parameter if icon doesn't exist
     if not os.path.exists("logo.png"):
         cmd = [arg for arg in cmd if arg != "--icon=logo.png"]
+    else:
+        # Check if Pillow is installed for icon conversion
+        try:
+            import PIL
+            print(f"{safe_emoji('✓', '[INFO]')} Pillow is installed. Icon conversion should work.")
+        except ImportError:
+            print(f"{safe_emoji('⚠️', '[WARNING]')} Pillow is not installed. Icon may not be used.")
+            # Remove the icon parameter to avoid build failures
+            cmd = [arg for arg in cmd if arg != "--icon=logo.png"]
 
     # Remove README parameter if it doesn't exist
     if not os.path.exists("README.md"):
@@ -80,6 +89,32 @@ def build_executable():
     except subprocess.CalledProcessError as e:
         print(f"{safe_emoji('❌', '[ERROR]')} Build failed with error: {e}")
         print(f"Error output: {e.stderr}")
+        
+        # Check for specific icon conversion error
+        if 'ValueError: Received icon image' in e.stderr and 'only' in e.stderr:
+            print(f"{safe_emoji('🔧', '[FIX]')} Icon conversion failed. Try installing Pillow with: pip install pillow")
+            print(f"{safe_emoji('🔄', '[RETRY]')} Retrying build without icon...")
+            
+            # Remove icon parameter and retry
+            cmd = [arg for arg in cmd if arg != "--icon=logo.png"]
+            try:
+                result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+                print(f"{safe_emoji('✅', '[SUCCESS]')} Build completed successfully without icon!")
+                
+                # Check if executable was created
+                exe_path = "dist/FileTransferCLI.exe"
+                if os.path.exists(exe_path):
+                    file_size = os.path.getsize(exe_path) / (1024 * 1024)  # MB
+                    print(f"{safe_emoji('📦', '[INFO]')} Executable created: {exe_path}")
+                    print(f"{safe_emoji('📏', '[INFO]')} File size: {file_size:.1f} MB")
+                    
+                    # Copy to root directory for easy access
+                    shutil.copy2(exe_path, "FileTransferCLI.exe")
+                    print(f"{safe_emoji('📋', '[INFO]')} Copied executable to root directory: FileTransferCLI.exe")
+                    return True
+            except Exception as retry_e:
+                print(f"{safe_emoji('❌', '[ERROR]')} Retry failed: {retry_e}")
+        
         return False
     except Exception as e:
         print(f"{safe_emoji('❌', '[ERROR]')} Unexpected error during build: {e}")
